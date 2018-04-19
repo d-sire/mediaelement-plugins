@@ -4,13 +4,13 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>MediaElement.js 4.2 - Accessibility Plugin</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!--<meta name="viewport" content="width=device-width, initial-scale=1">-->
     <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
     <link rel="icon" href="favicon.ico" type="image/x-icon">
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/5.0.0/normalize.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/mediaelement/4.2.9/mediaelementplayer.css">
-    <link rel="stylesheet" href="../dist/airplay/airplay.css">
+    <link rel="stylesheet" href="../dist/a11y/a11y.css">
     <link rel="stylesheet" href="demo.css">
 </head>
 <body>
@@ -20,8 +20,13 @@
 
         <h2>Video Player</h2>
         <div class="media-wrapper">
-            <video id="player1" width="750" height="421" controls preload="none">
-                <source src="https://commondatastorage.googleapis.com/gtv-videos-bucket/CastVideos/mp4/BigBuckBunny.mp4" type="video/mp4">
+            <video id="player1" width="750" height="421" controls preload="none" playsinline
+                   data-video-description='[{"src": "https://video.aktion-mensch.de/magnolia/aktion-mensch-videoplayer/aktion-mensch_beispiel/aktion-mensch_beispiel_signlanguageVideo.mp4", "type": "video/mp4"}, {"src": "https://video.aktion-mensch.de/magnolia/aktion-mensch-videoplayer/aktion-mensch_beispiel/aktion-mensch_beispiel_signlanguageVideo.webm", "type": "video/webm"}, {"src": "https://video.aktion-mensch.de/magnolia/aktion-mensch-videoplayer/aktion-mensch_beispiel/aktion-mensch_beispiel_signlanguageVideo.ogv", "type": "video/ogv"}]'
+                   data-audio-description='[{"src": "https://video.aktion-mensch.de/magnolia/aktion-mensch_beispiel_audioDescription.mp3", "type": "audio/mp3"}]'
+            >
+                <source src="https://video.aktion-mensch.de/magnolia/aktion-mensch_beispiel_video.mp4" type="video/mp4" />
+                <source src="https://video.aktion-mensch.de/magnolia/aktion-mensch_beispiel_video.webm" type="video/webm" />
+                <source src="https://video.aktion-mensch.de/magnolia/aktion-mensch_beispiel_video.ogv" type="video/ogg" />
             </video>
         </div>
     </div>

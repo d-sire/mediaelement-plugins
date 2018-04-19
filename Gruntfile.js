@@ -19,11 +19,11 @@ module.exports = function (grunt) {
 		watch: {
 			scripts: {
 				files: ['src/**/*.js', 'test/core/*.js'],
-				tasks: ['eslint', 'browserify', 'concat', 'uglify', 'copy:translation']
+				tasks: ['eslint', 'browserify', 'concat', 'uglify', 'copy']
 			},
 			stylesheet: {
 				files: ['src/**/*.css', 'src/css/**/*.png', 'src/css/**/*.svg'],
-				tasks: ['postcss', 'copy:build']
+				tasks: ['postcss', 'copy']
 			}
 		},
 
@@ -40,25 +40,26 @@ module.exports = function (grunt) {
 		browserify: {
 			dist: {
 				files: {
-					'dist/ads/ads.js': 'src/ads/ads.js',
-					'dist/ads-vast-vpaid/ads-vast-vpaid.js': 'src/ads-vast-vpaid/ads-vast-vpaid.js',
-					'dist/airplay/airplay.js': 'src/airplay/airplay.js',
-					'dist/chromecast/chromecast.js': ['src/chromecast/chromecast.js', 'src/chromecast/player.js'],
-					'dist/context-menu/context-menu.js': 'src/context-menu/context-menu.js',
-					'dist/facebook-pixel/facebook-pixel.js': 'src/facebook-pixel/facebook-pixel.js',
-					'dist/google-analytics/google-analytics.js': 'src/google-analytics/google-analytics.js',
-					'dist/jump-forward/jump-forward.js': 'src/jump-forward/jump-forward.js',
-					'dist/loop/loop.js': 'src/loop/loop.js',
-					'dist/markers/markers.js': 'src/markers/markers.js',
-					'dist/postroll/postroll.js': 'src/postroll/postroll.js',
-					'dist/playlist/playlist.js': 'src/playlist/playlist.js',
-					'dist/preview/preview.js': 'src/preview/preview.js',
-					'dist/quality/quality.js': 'src/quality/quality.js',
-					'dist/skip-back/skip-back.js': 'src/skip-back/skip-back.js',
-					'dist/source-chooser/source-chooser.js': 'src/source-chooser/source-chooser.js',
-					'dist/speed/speed.js': 'src/speed/speed.js',
-					'dist/stop/stop.js': 'src/stop/stop.js',
-					'dist/vrview/vrview.js': 'src/vrview/vrview.js',
+					'dist/a11y/a11y.js': 'src/a11y/a11y.js',
+					// 'dist/ads/ads.js': 'src/ads/ads.js',
+					// 'dist/ads-vast-vpaid/ads-vast-vpaid.js': 'src/ads-vast-vpaid/ads-vast-vpaid.js',
+					// 'dist/airplay/airplay.js': 'src/airplay/airplay.js',
+					// 'dist/chromecast/chromecast.js': ['src/chromecast/chromecast.js', 'src/chromecast/player.js'],
+					// 'dist/context-menu/context-menu.js': 'src/context-menu/context-menu.js',
+					// 'dist/facebook-pixel/facebook-pixel.js': 'src/facebook-pixel/facebook-pixel.js',
+					// 'dist/google-analytics/google-analytics.js': 'src/google-analytics/google-analytics.js',
+					// 'dist/jump-forward/jump-forward.js': 'src/jump-forward/jump-forward.js',
+					// 'dist/loop/loop.js': 'src/loop/loop.js',
+					// 'dist/markers/markers.js': 'src/markers/markers.js',
+					// 'dist/postroll/postroll.js': 'src/postroll/postroll.js',
+					// 'dist/playlist/playlist.js': 'src/playlist/playlist.js',
+					// 'dist/preview/preview.js': 'src/preview/preview.js',
+					// 'dist/quality/quality.js': 'src/quality/quality.js',
+					// 'dist/skip-back/skip-back.js': 'src/skip-back/skip-back.js',
+					// 'dist/source-chooser/source-chooser.js': 'src/source-chooser/source-chooser.js',
+					// 'dist/speed/speed.js': 'src/speed/speed.js',
+					// 'dist/stop/stop.js': 'src/stop/stop.js',
+					// 'dist/vrview/vrview.js': 'src/vrview/vrview.js',
 				},
 				options: {
 					plugin: [
@@ -110,20 +111,21 @@ module.exports = function (grunt) {
 					]
 				},
 				files: {
-					'dist/ads/ads.css': 'src/ads/ads.css',
-					'dist/airplay/airplay.css': 'src/airplay/airplay.css',
-					'dist/chromecast/chromecast.css': 'src/chromecast/chromecast.css',
-					'dist/context-menu/context-menu.css': 'src/context-menu/context-menu.css',
-					'dist/jump-forward/jump-forward.css': 'src/jump-forward/jump-forward.css',
-					'dist/loop/loop.css': 'src/loop/loop.css',
-					'dist/playlist/playlist.css': 'src/playlist/playlist.css',
-					'dist/postroll/postroll.css': 'src/postroll/postroll.css',
-					'dist/quality/quality.css': 'src/quality/quality.css',
-					'dist/skip-back/skip-back.css': 'src/skip-back/skip-back.css',
-					'dist/source-chooser/source-chooser.css': 'src/source-chooser/source-chooser.css',
-					'dist/speed/speed.css': 'src/speed/speed.css',
-					'dist/stop/stop.css': 'src/stop/stop.css',
-					'dist/vrview/vrview.css': 'src/vrview/vrview.css'
+					'dist/a11y/a11y.css': 'src/a11y/a11y.css',
+					// 'dist/ads/ads.css': 'src/ads/ads.css',
+					// 'dist/airplay/airplay.css': 'src/airplay/airplay.css',
+					// 'dist/chromecast/chromecast.css': 'src/chromecast/chromecast.css',
+					// 'dist/context-menu/context-menu.css': 'src/context-menu/context-menu.css',
+					// 'dist/jump-forward/jump-forward.css': 'src/jump-forward/jump-forward.css',
+					// 'dist/loop/loop.css': 'src/loop/loop.css',
+					// 'dist/playlist/playlist.css': 'src/playlist/playlist.css',
+					// 'dist/postroll/postroll.css': 'src/postroll/postroll.css',
+					// 'dist/quality/quality.css': 'src/quality/quality.css',
+					// 'dist/skip-back/skip-back.css': 'src/skip-back/skip-back.css',
+					// 'dist/source-chooser/source-chooser.css': 'src/source-chooser/source-chooser.css',
+					// 'dist/speed/speed.css': 'src/speed/speed.css',
+					// 'dist/stop/stop.css': 'src/stop/stop.css',
+					// 'dist/vrview/vrview.css': 'src/vrview/vrview.css'
 				}
 			},
 			compressed: {
@@ -138,23 +140,23 @@ module.exports = function (grunt) {
 					]
 				},
 				files: {
-					'dist/ads/ads.min.css': 'dist/ads/ads.css',
-					'dist/airplay/airplay.min.css': 'dist/airplay/airplay.css',
-					'dist/chromecast/chromecast.min.css': 'dist/chromecast/chromecast.css',
-					'dist/context-menu/context-menu.min.css': 'dist/context-menu/context-menu.css',
-					'dist/jump-forward/jump-forward.min.css': 'dist/jump-forward/jump-forward.css',
-					'dist/loop/loop.min.css': 'dist/loop/loop.css',
-					'dist/playlist/playlist.min.css': 'dist/playlist/playlist.css',
-					'dist/postroll/postroll.min.css': 'dist/postroll/postroll.css',
-					'dist/quality/quality.min.css': 'dist/quality/quality.css',
-					'dist/skip-back/skip-back.min.css': 'dist/skip-back/skip-back.css',
-					'dist/source-chooser/source-chooser.min.css': 'dist/source-chooser/source-chooser.css',
-					'dist/speed/speed.min.css': 'dist/speed/speed.css',
-					'dist/stop/stop.min.css': 'dist/stop/stop.css',
-					'dist/vrview/vrview.min.css': 'dist/vrview/vrview.css'
+					'dist/a11y/a11y.min.css': 'dist/a11y/a11y.css',
+					// 'dist/ads/ads.min.css': 'dist/ads/ads.css',
+					// 'dist/airplay/airplay.min.css': 'dist/airplay/airplay.css',
+					// 'dist/chromecast/chromecast.min.css': 'dist/chromecast/chromecast.css',
+					// 'dist/context-menu/context-menu.min.css': 'dist/context-menu/context-menu.css',
+					// 'dist/jump-forward/jump-forward.min.css': 'dist/jump-forward/jump-forward.css',
+					// 'dist/loop/loop.min.css': 'dist/loop/loop.css',
+					// 'dist/playlist/playlist.min.css': 'dist/playlist/playlist.css',
+					// 'dist/postroll/postroll.min.css': 'dist/postroll/postroll.css',
+					// 'dist/quality/quality.min.css': 'dist/quality/quality.css',
+					// 'dist/skip-back/skip-back.min.css': 'dist/skip-back/skip-back.css',
+					// 'dist/source-chooser/source-chooser.min.css': 'dist/source-chooser/source-chooser.css',
+					// 'dist/speed/speed.min.css': 'dist/speed/speed.css',
+					// 'dist/stop/stop.min.css': 'dist/stop/stop.css',
+					// 'dist/vrview/vrview.min.css': 'dist/vrview/vrview.css'
 				}
 			},
-
 		},
 		copy: {
 			main: {
