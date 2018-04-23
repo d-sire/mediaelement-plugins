@@ -25,7 +25,9 @@ Object.assign(mejs.MepDefaults, {
 
     videoDescriptionSource: null,
 
-    isPlaying: false
+    isPlaying: false,
+
+    isVoiceover: false
 });
 
 Object.assign(MediaElementPlayer.prototype, {
@@ -102,19 +104,19 @@ Object.assign(MediaElementPlayer.prototype, {
 
         return sources ? this._evaluateBestMatchingSource(sources) : null;
     },
-    _evaluateBestMatchingSource: function _evaluateBestMatchingSource(sourceObject) {
+    _evaluateBestMatchingSource: function _evaluateBestMatchingSource(sourceArray) {
         var _this = this;
 
         var canPlayType = function canPlayType(type) {
             return _this.node.canPlayType(type);
         };
 
-        var propablySources = sourceObject.filter(function (file) {
+        var propablySources = sourceArray.filter(function (file) {
             return canPlayType(file.type) === 'probably';
         });
         if (propablySources.length > 0) return propablySources[0].src;
 
-        var alternativeSources = sourceObject.filter(function (file) {
+        var alternativeSources = sourceArray.filter(function (file) {
             return canPlayType(file.type) === 'maybe';
         });
         if (alternativeSources.length > 0) return alternativeSources[0].src;
@@ -133,17 +135,6 @@ Object.assign(MediaElementPlayer.prototype, {
         document.body.appendChild(audioNode);
         audioNode.load();
         audioNode.muted = true;
-        t.audioDescriptionNode = audioNode;
-
-        audioNode.addEventListener('loadeddata', function () {
-            return console.info('loadeddata');
-        });
-        audioNode.addEventListener('loadstart', function () {
-            return console.info('loadstart');
-        });
-        audioNode.addEventListener('canplay', function () {
-            return console.info('canplay');
-        });
 
         audioNode.play().then(function () {
             t.audioDescriptionNode.currentTime = t.node.currentTime;
@@ -152,12 +143,24 @@ Object.assign(MediaElementPlayer.prototype, {
             return console.error(e);
         });
 
+        t.audioDescriptionNode = audioNode;
+
+        audioNode.addEventListener('loadeddata', function () {
+            return console.info('loadeddata');
+        });
+        audioNode.addEventListener('loadstart', function () {
+            return console.info('loadstart');
+        });
+
         t.node.addEventListener('play', function () {
             t.audioDescriptionNode.currentTime = t.node.currentTime;
             var promise = t.audioDescriptionNode.play();
             promise.catch(function (e) {
                 return console.error(e);
             });
+        });
+        t.audioDescriptionNode.addEventListener('play', function () {
+            return t.audioDescriptionNode.currentTime = t.node.currentTime;
         });
         t.node.addEventListener('seeked', function () {
             return t.audioDescriptionNode.currentTime = t.node.currentTime;

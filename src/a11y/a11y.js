@@ -23,13 +23,13 @@ Object.assign(mejs.MepDefaults, {
     defaultSource: null,
 
     /**
-     * Store for best matching audio desctiption file
+     * Store for best matching audio description file
      * @type {?string}
      */
     audioDescriptionSource: null,
 
     /**
-     * Store for best matching video desctiption file
+     * Store for best matching video description file
      * @type {?string}
      */
     videoDescriptionSource: null,
@@ -39,6 +39,12 @@ Object.assign(mejs.MepDefaults, {
      * @type {boolean}
      */
     isPlaying: false,
+
+    /**
+     * should audio description be voiceover
+     * @type {boolean}
+     */
+    isVoiceover: false,
 });
 
 
@@ -93,6 +99,11 @@ Object.assign(MediaElementPlayer.prototype, {
         });
     },
 
+    /**
+     * Load the best matching source file from a data attribute
+     * @param {string} attribute - data attribute for a source object.
+     * @returns {?string} source - best matching source file or null
+     */
     _loadSourceFromAttribute(attribute) {
         const t = this;
         if (!t.node.hasAttribute(attribute)) return null;
@@ -112,15 +123,20 @@ Object.assign(MediaElementPlayer.prototype, {
         return (sources) ? this._evaluateBestMatchingSource(sources) : null;
     },
 
-    _evaluateBestMatchingSource(sourceObject) {
+    /**
+     * Evaluate the best matching source from an array of sources
+     * @param {string} sourceArray - an array of source objects
+     * @returns {?string} source - best matching source file or null
+     */
+    _evaluateBestMatchingSource(sourceArray) {
         const canPlayType = type => this.node.canPlayType(type);
 
         // checking most likely support
-        const propablySources = sourceObject.filter(file => canPlayType(file.type) === 'probably');
+        const propablySources = sourceArray.filter(file => canPlayType(file.type) === 'probably');
         if (propablySources.length > 0) return propablySources[0].src;
 
         // checking might support
-        const alternativeSources = sourceObject.filter(file => canPlayType(file.type) === 'maybe');
+        const alternativeSources = sourceArray.filter(file => canPlayType(file.type) === 'maybe');
         if (alternativeSources.length > 0) return alternativeSources[0].src;
 
         return null;
@@ -144,16 +160,23 @@ Object.assign(MediaElementPlayer.prototype, {
         document.body.appendChild(audioNode);
         audioNode.load();
         audioNode.muted = true;
-        t.audioDescriptionNode = audioNode;
 
-        audioNode.addEventListener('loadeddata', () => console.info('loadeddata'));
-        audioNode.addEventListener('loadstart', () => console.info('loadstart'));
-        audioNode.addEventListener('canplay', () => console.info('canplay'));
-
+        // trigger initial play/pause inside the trusted event, to match safari requirements
         audioNode.play().then(() => {
             t.audioDescriptionNode.currentTime = t.node.currentTime;
             if(!t.options.isPlaying) audioNode.pause();
         }).catch(e => console.error(e));
+
+
+        t.audioDescriptionNode = audioNode;
+
+        audioNode.addEventListener('loadeddata', () => console.info('loadeddata'));
+        audioNode.addEventListener('loadstart', () => console.info('loadstart'));
+
+
+
+
+
 
         // bind audio events
         t.node.addEventListener('play', () => {
@@ -161,6 +184,7 @@ Object.assign(MediaElementPlayer.prototype, {
             const promise = t.audioDescriptionNode.play();
             promise.catch(e => console.error(e));
         });
+        t.audioDescriptionNode.addEventListener('play', () => t.audioDescriptionNode.currentTime = t.node.currentTime);
         t.node.addEventListener('seeked', () => t.audioDescriptionNode.currentTime = t.node.currentTime);
         t.node.addEventListener('pause', () => t.audioDescriptionNode.pause());
         t.node.addEventListener('ended', () => t.audioDescriptionNode.pause());
