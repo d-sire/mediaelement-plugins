@@ -1,7 +1,7 @@
 'use strict';
 
-mejs.i18n.en['mejs.a11y-video-description'] = 'toggle sign language';
-mejs.i18n.en['mejs.a11y-audio-description'] = 'toggle audio description';
+mejs.i18n.en['mejs.a11y-video-description'] = 'Toggle sign language';
+mejs.i18n.en['mejs.a11y-audio-description'] = 'Toggle audio description';
 
 Object.assign(mejs.MepDefaults, {
     /**
@@ -9,37 +9,31 @@ Object.assign(mejs.MepDefaults, {
      * @type {boolean}
      */
     videoDescriptionToggled: false,
-
     /**
      * Audio description is toggled
      * @type {boolean}
      */
     audioDescriptionToggled: false,
-
     /**
      * Store for initial source file
      * @type {?string}
      */
     defaultSource: null,
-
     /**
      * Store for best matching audio description file
      * @type {?string}
      */
     audioDescriptionSource: null,
-
     /**
      * Store for best matching video description file
      * @type {?string}
      */
     videoDescriptionSource: null,
-
     /**
      * if the player is currently playing
      * @type {boolean}
      */
     isPlaying: false,
-
     /**
      * should audio description be voiceover
      * @type {boolean}
@@ -83,6 +77,11 @@ Object.assign(MediaElementPlayer.prototype, {
         });
     },
 
+    /**
+     * Create video description button and bind events
+     * @private
+     * @returns {undefined}
+     */
     _createVideoDescription() {
         const t = this;
         const videoDescriptionTitle = mejs.i18n.t('mejs.a11y-video-description');
@@ -101,8 +100,9 @@ Object.assign(MediaElementPlayer.prototype, {
 
     /**
      * Load the best matching source file from a data attribute
-     * @param {string} attribute - data attribute for a source object.
-     * @returns {?string} source - best matching source file or null
+     * @private
+     * @param {String} attribute - data attribute for a source object.
+     * @returns {?String} source - best matching source file or null
      */
     _loadSourceFromAttribute(attribute) {
         const t = this;
@@ -125,8 +125,9 @@ Object.assign(MediaElementPlayer.prototype, {
 
     /**
      * Evaluate the best matching source from an array of sources
-     * @param {string} sourceArray - an array of source objects
-     * @returns {?string} source - best matching source file or null
+     * @private
+     * @param {Array.<{src: String, type: String}>} sourceArray
+     * @returns {?String} source
      */
     _evaluateBestMatchingSource(sourceArray) {
         const canPlayType = type => this.node.canPlayType(type);

@@ -179,7 +179,8 @@ See`src/` directory, and check how the files were written to ensure compatibilit
 <a id="plugins"></a>
 ## Available plugins
 
-* [Ads](docs/ads.md)
+* [A11y](docs/a11y.md)
+* [AirPlay](docs/airplay.md)
 * [AirPlay](docs/airplay.md)
 * [Chromecast](docs/chromecast.md)
 * [Context Menu](docs/context-menu.md)
