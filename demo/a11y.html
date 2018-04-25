@@ -18,12 +18,24 @@
         <h1>Accessibility Plugin</h1>
         <p><a href="index.html">Back to Main</a> </p>
 
-        <h2>Video Player</h2>
+        <h2>Video Player (w/ Voice-Over)</h2>
         <div class="media-wrapper">
             <video id="player1" width="750" height="421" controls preload="none" playsinline
                    data-video-description='[{"src": "https://video.aktion-mensch.de/magnolia/aktion-mensch-videoplayer/aktion-mensch_beispiel/aktion-mensch_beispiel_signlanguageVideo.mp4", "type": "video/mp4"}, {"src": "https://video.aktion-mensch.de/magnolia/aktion-mensch-videoplayer/aktion-mensch_beispiel/aktion-mensch_beispiel_signlanguageVideo.webm", "type": "video/webm"}, {"src": "https://video.aktion-mensch.de/magnolia/aktion-mensch-videoplayer/aktion-mensch_beispiel/aktion-mensch_beispiel_signlanguageVideo.ogv", "type": "video/ogv"}]'
                    data-audio-description='[{"src": "https://video.aktion-mensch.de/magnolia/aktion-mensch_beispiel_audioDescription.mp3", "type": "audio/mp3"}]'
-                   data-audio-descrciption-voiceover
+                   data-audio-description-voiceover
+            >
+                <source src="https://video.aktion-mensch.de/magnolia/aktion-mensch_beispiel_video.mp4" type="video/mp4" />
+                <source src="https://video.aktion-mensch.de/magnolia/aktion-mensch_beispiel_video.webm" type="video/webm" />
+                <source src="https://video.aktion-mensch.de/magnolia/aktion-mensch_beispiel_video.ogv" type="video/ogg" />
+            </video>
+        </div>
+
+        <h2>Video Player (w/o Voice-Over)</h2>
+        <div class="media-wrapper">
+            <video id="player2" width="750" height="421" controls preload="none" playsinline
+                   data-video-description='[{"src": "https://video.aktion-mensch.de/magnolia/aktion-mensch-videoplayer/aktion-mensch_beispiel/aktion-mensch_beispiel_signlanguageVideo.mp4", "type": "video/mp4"}, {"src": "https://video.aktion-mensch.de/magnolia/aktion-mensch-videoplayer/aktion-mensch_beispiel/aktion-mensch_beispiel_signlanguageVideo.webm", "type": "video/webm"}, {"src": "https://video.aktion-mensch.de/magnolia/aktion-mensch-videoplayer/aktion-mensch_beispiel/aktion-mensch_beispiel_signlanguageVideo.ogv", "type": "video/ogv"}]'
+                   data-audio-description='[{"src": "https://video.aktion-mensch.de/magnolia/aktion-mensch_beispiel_audioDescription.mp3", "type": "audio/mp3"}]'
             >
                 <source src="https://video.aktion-mensch.de/magnolia/aktion-mensch_beispiel_video.mp4" type="video/mp4" />
                 <source src="https://video.aktion-mensch.de/magnolia/aktion-mensch_beispiel_video.webm" type="video/webm" />
@@ -35,7 +47,11 @@
     <script src="../dist/a11y/a11y.js"></script>
     <script>
         new MediaElementPlayer('player1', {
-            features: ['playpause', 'current', 'progress', 'duration', 'volume', 'fullscreen', 'a11y'],
+            features: ['playpause', 'current', 'progress', 'duration', 'volume', 'a11y', 'fullscreen'],
+        });
+
+        new MediaElementPlayer('player2', {
+            features: ['playpause', 'current', 'progress', 'duration', 'volume', 'a11y', 'fullscreen'],
         });
     </script>
 </body>

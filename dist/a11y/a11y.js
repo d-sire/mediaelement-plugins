@@ -11,6 +11,8 @@
  */(function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(_dereq_,module,exports){
 'use strict';
 
+function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
+
 mejs.i18n.en['mejs.a11y-video-description'] = 'Toggle sign language';
 mejs.i18n.en['mejs.a11y-audio-description'] = 'Toggle audio description';
 
@@ -35,6 +37,7 @@ Object.assign(MediaElementPlayer.prototype, {
         var t = this;
 
         t.options.defaultSource = this.node.src;
+        t.options.isVoiceover = t._loadBooleanFromAttribute('data-audio-description-voiceover');
         t.options.audioDescriptionSource = t._loadSourceFromAttribute('data-audio-description');
         t.options.videoDescriptionSource = t._loadSourceFromAttribute('data-video-description');
 
@@ -52,6 +55,11 @@ Object.assign(MediaElementPlayer.prototype, {
         });
         t.node.addEventListener('ended', function () {
             return t.options.isPlaying = false;
+        });
+    },
+    _getFirstChildNodeByClassName: function _getFirstChildNodeByClassName(parentNode, className) {
+        return [].concat(_toConsumableArray(parentNode.childNodes)).find(function (node) {
+            return node.className.indexOf(className) > -1;
         });
     },
     _createAudioDescription: function _createAudioDescription() {
@@ -104,20 +112,30 @@ Object.assign(MediaElementPlayer.prototype, {
 
         return sources ? this._evaluateBestMatchingSource(sources) : null;
     },
+    _loadBooleanFromAttribute: function _loadBooleanFromAttribute(attribute) {
+        var t = this;
+        if (!t.node.hasAttribute(attribute)) return false;
+
+        var boolValue = t.node.getAttribute(attribute);
+        return boolValue === 'true' || boolValue === '';
+    },
     _evaluateBestMatchingSource: function _evaluateBestMatchingSource(sourceArray) {
         var _this = this;
 
         var canPlayType = function canPlayType(type) {
             return _this.node.canPlayType(type);
         };
+        var getMimeFromType = function getMimeFromType(type) {
+            return mejs.Utils.getMimeFromType(type);
+        };
 
         var propablySources = sourceArray.filter(function (file) {
-            return canPlayType(file.type) === 'probably';
+            return canPlayType(getMimeFromType(file.type)) === 'probably';
         });
         if (propablySources.length > 0) return propablySources[0].src;
 
         var alternativeSources = sourceArray.filter(function (file) {
-            return canPlayType(file.type) === 'maybe';
+            return canPlayType(getMimeFromType(file.type)) === 'maybe';
         });
         if (alternativeSources.length > 0) return alternativeSources[0].src;
 
@@ -126,7 +144,6 @@ Object.assign(MediaElementPlayer.prototype, {
     _createAudioDescriptionPlayer: function _createAudioDescriptionPlayer() {
         console.log('creating audio player');
         var t = this;
-
         var audioNode = document.createElement('audio');
         audioNode.setAttribute('src', t.options.audioDescriptionSource);
         audioNode.setAttribute('preload', 'metadata');
@@ -144,13 +161,6 @@ Object.assign(MediaElementPlayer.prototype, {
         });
 
         t.audioDescriptionNode = audioNode;
-
-        audioNode.addEventListener('loadeddata', function () {
-            return console.info('loadeddata');
-        });
-        audioNode.addEventListener('loadstart', function () {
-            return console.info('loadstart');
-        });
 
         t.node.addEventListener('play', function () {
             t.audioDescriptionNode.currentTime = t.node.currentTime;
