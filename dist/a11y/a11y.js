@@ -142,62 +142,89 @@ Object.assign(MediaElementPlayer.prototype, {
         return null;
     },
     _createAudioDescriptionPlayer: function _createAudioDescriptionPlayer() {
-        console.log('creating audio player');
         var t = this;
         var audioNode = document.createElement('audio');
         audioNode.setAttribute('src', t.options.audioDescriptionSource);
         audioNode.setAttribute('preload', 'metadata');
         audioNode.setAttribute('playsinline', '');
         audioNode.setAttribute('controls', '');
-        document.body.appendChild(audioNode);
         audioNode.load();
-        audioNode.muted = true;
+        document.body.appendChild(audioNode);
 
-        audioNode.play().then(function () {
-            t.audioDescriptionNode.currentTime = t.node.currentTime;
-            if (!t.options.isPlaying) audioNode.pause();
-        }).catch(function (e) {
-            return console.error(e);
+        t.audioDescription = new mejs.MediaElementPlayer(audioNode, {
+            features: ['volume', 'playpause', 'current', 'progress'],
+            audioVolume: 'vertical',
+            startVolume: t.node.volume,
+            pauseOtherPlayers: false
         });
 
-        t.audioDescriptionNode = audioNode;
+        t.audioDescription.container.classList.add(t.options.classPrefix + 'audio-description-player');
 
         t.node.addEventListener('play', function () {
-            t.audioDescriptionNode.currentTime = t.node.currentTime;
-            var promise = t.audioDescriptionNode.play();
+            var promise = t.audioDescription.node.play();
             promise.catch(function (e) {
                 return console.error(e);
             });
         });
-        t.audioDescriptionNode.addEventListener('play', function () {
-            return t.audioDescriptionNode.currentTime = t.node.currentTime;
+        t.audioDescription.node.addEventListener('play', function () {
+            return t.audioDescription.node.currentTime = t.node.currentTime;
         });
         t.node.addEventListener('seeked', function () {
-            return t.audioDescriptionNode.currentTime = t.node.currentTime;
+            return t.audioDescription.node.currentTime = t.node.currentTime;
         });
         t.node.addEventListener('pause', function () {
-            return t.audioDescriptionNode.pause();
+            return t.audioDescription.node.pause();
         });
         t.node.addEventListener('ended', function () {
-            return t.audioDescriptionNode.pause();
+            return t.audioDescription.node.pause();
         });
+
+        if (!t.options.isVoiceover) {
+            var volumeButtonClass = t.options.classPrefix + 'volume-button';
+            var videoVolumeButton = t._getFirstChildNodeByClassName(t.controls, volumeButtonClass);
+            t.videoVolumeButton = videoVolumeButton;
+
+            if (videoVolumeButton) {
+                var descriptiveVolumeButton = t._getFirstChildNodeByClassName(t.audioDescription.controls, volumeButtonClass);
+                videoVolumeButton.classList.add('hidden');
+                t.controls.insertBefore(descriptiveVolumeButton, videoVolumeButton.nextSibling);
+                t.descriptiveVolumeButton = descriptiveVolumeButton;
+            }
+        }
+
+        if (t.options.isVoiceover) {
+            t.node.addEventListener('volumechange', function () {
+                return t.audioDescription.node.volume = t.node.volume;
+            });
+        }
     },
     _toggleAudioDescription: function _toggleAudioDescription() {
         var t = this;
 
-        if (!t.audioDescriptionNode) t._createAudioDescriptionPlayer();
+        if (!t.audioDescription) t._createAudioDescriptionPlayer();
 
         if (t.options.audioDescriptionToggled) {
-            t.audioDescriptionNode.volume = t.node.volume;
-            t.node.muted = true;
-            t.audioDescriptionNode.muted = false;
-            if (t.options.isPlaying) t.audioDescriptionNode.play().catch(function (e) {
+            t.audioDescription.node.volume = t.node.volume;
+            if (t.options.isPlaying) t.audioDescription.node.play().catch(function (e) {
                 return console.error(e);
             });
+
+            if (!t.options.isVoiceover && t.videoVolumeButton) {
+                t.node.muted = true;
+                t.audioDescription.node.muted = false;
+                mejs.Utils.addClass(t.videoVolumeButton, 'hidden');
+                mejs.Utils.removeClass(t.descriptiveVolumeButton, 'hidden');
+            }
         } else {
-            t.audioDescriptionNode.muted = true;
-            t.node.muted = false;
-            t.audioDescriptionNode.pause();
+            t.node.volume = t.audioDescription.node.volume;
+            t.audioDescription.node.pause();
+
+            if (!t.options.isVoiceover && t.videoVolumeButton) {
+                t.audioDescription.node.muted = true;
+                t.node.muted = false;
+                mejs.Utils.removeClass(t.videoVolumeButton, 'hidden');
+                mejs.Utils.addClass(t.descriptiveVolumeButton, 'hidden');
+            }
         }
     },
     _toggleVideoDescription: function _toggleVideoDescription() {

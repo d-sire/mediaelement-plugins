@@ -181,51 +181,78 @@ Object.assign(MediaElementPlayer.prototype, {
      * @returns {Undefined}
      */
     _createAudioDescriptionPlayer() {
-        console.log('creating audio player');
         const t = this;
         const audioNode = document.createElement('audio');
         audioNode.setAttribute('src', t.options.audioDescriptionSource);
         audioNode.setAttribute('preload', 'metadata');
         audioNode.setAttribute('playsinline', '');
         audioNode.setAttribute('controls', '');
-        document.body.appendChild(audioNode);
         audioNode.load();
-        audioNode.muted = true;
+        document.body.appendChild(audioNode);
 
-        // trigger initial play/pause inside the trusted event, to match safari requirements
-        audioNode.play().then(() => {
-            t.audioDescriptionNode.currentTime = t.node.currentTime;
-            if(!t.options.isPlaying) audioNode.pause();
-        }).catch(e => console.error(e));
+        t.audioDescription = new mejs.MediaElementPlayer(audioNode, {
+            features: ['volume', 'playpause', 'current', 'progress'],
+            audioVolume: 'vertical',
+            startVolume: t.node.volume,
+            pauseOtherPlayers: false
+        });
 
-        t.audioDescriptionNode = audioNode;
+        t.audioDescription.container.classList.add(`${t.options.classPrefix}audio-description-player`);
 
-        // bind audio events
         t.node.addEventListener('play', () => {
-            t.audioDescriptionNode.currentTime = t.node.currentTime;
-            const promise = t.audioDescriptionNode.play();
+            const promise = t.audioDescription.node.play();
             promise.catch(e => console.error(e));
         });
-        t.audioDescriptionNode.addEventListener('play', () => t.audioDescriptionNode.currentTime = t.node.currentTime);
-        t.node.addEventListener('seeked', () => t.audioDescriptionNode.currentTime = t.node.currentTime);
-        t.node.addEventListener('pause', () => t.audioDescriptionNode.pause());
-        t.node.addEventListener('ended', () => t.audioDescriptionNode.pause());
+        t.audioDescription.node.addEventListener('play', () => t.audioDescription.node.currentTime = t.node.currentTime);
+        t.node.addEventListener('seeked', () => t.audioDescription.node.currentTime = t.node.currentTime);
+        t.node.addEventListener('pause', () => t.audioDescription.node.pause());
+        t.node.addEventListener('ended', () => t.audioDescription.node.pause());
+
+        // if audio description is not voice over, move the audio description players volume slider into the mediaelement player to enable volume changes
+        if(!t.options.isVoiceover) {
+            const volumeButtonClass = `${t.options.classPrefix}volume-button`;
+            const videoVolumeButton = t._getFirstChildNodeByClassName(t.controls, volumeButtonClass);
+            t.videoVolumeButton = videoVolumeButton;
+
+            if(videoVolumeButton) {
+                const descriptiveVolumeButton = t._getFirstChildNodeByClassName(t.audioDescription.controls, volumeButtonClass);
+                videoVolumeButton.classList.add('hidden');
+                t.controls.insertBefore(descriptiveVolumeButton, videoVolumeButton.nextSibling);
+                t.descriptiveVolumeButton = descriptiveVolumeButton;
+            }
+        }
+
+        // if audio description is voice over, map volume changes to audio description player
+        if(t.options.isVoiceover) {
+            t.node.addEventListener('volumechange', () => t.audioDescription.node.volume = t.node.volume);
+        }
     },
 
     _toggleAudioDescription() {
         const t = this;
 
-        if (!t.audioDescriptionNode) t._createAudioDescriptionPlayer();
+        if (!t.audioDescription) t._createAudioDescriptionPlayer();
 
         if (t.options.audioDescriptionToggled) {
-            t.audioDescriptionNode.volume = t.node.volume;
-            t.node.muted = true;
-            t.audioDescriptionNode.muted = false;
-            if (t.options.isPlaying) t.audioDescriptionNode.play().catch(e => console.error(e));
+            t.audioDescription.node.volume = t.node.volume;
+            if (t.options.isPlaying) t.audioDescription.node.play().catch(e => console.error(e));
+
+            if(!t.options.isVoiceover && t.videoVolumeButton) {
+                t.node.muted = true;
+                t.audioDescription.node.muted = false;
+                mejs.Utils.addClass(t.videoVolumeButton, 'hidden');
+                mejs.Utils.removeClass(t.descriptiveVolumeButton, 'hidden');
+            }
         } else {
-            t.audioDescriptionNode.muted = true;
-            t.node.muted = false;
-            t.audioDescriptionNode.pause();
+            t.node.volume = t.audioDescription.node.volume;
+            t.audioDescription.node.pause();
+
+            if(!t.options.isVoiceover && t.videoVolumeButton) {
+                t.audioDescription.node.muted = true;
+                t.node.muted = false;
+                mejs.Utils.removeClass(t.videoVolumeButton, 'hidden');
+                mejs.Utils.addClass(t.descriptiveVolumeButton, 'hidden');
+            }
         }
     },
 
