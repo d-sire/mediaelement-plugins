@@ -36,7 +36,7 @@ Object.assign(MediaElementPlayer.prototype, {
     builda11y: function builda11y() {
         var t = this;
 
-        t.options.defaultSource = this.node.src;
+        t.options.defaultSource = t.node.src;
         t.options.isVoiceover = t._loadBooleanFromAttribute('data-audio-description-voiceover');
         t.options.audioDescriptionSource = t._loadSourceFromAttribute('data-audio-description');
         t.options.videoDescriptionSource = t._loadSourceFromAttribute('data-video-description');
@@ -122,11 +122,11 @@ Object.assign(MediaElementPlayer.prototype, {
     _evaluateBestMatchingSource: function _evaluateBestMatchingSource(sourceArray) {
         var _this = this;
 
-        var canPlayType = function canPlayType(type) {
-            return _this.node.canPlayType(type);
-        };
         var getMimeFromType = function getMimeFromType(type) {
             return mejs.Utils.getMimeFromType(type);
+        };
+        var canPlayType = function canPlayType(type) {
+            return _this.node.canPlayType(type);
         };
 
         var propablySources = sourceArray.filter(function (file) {
@@ -143,41 +143,21 @@ Object.assign(MediaElementPlayer.prototype, {
     },
     _createAudioDescriptionPlayer: function _createAudioDescriptionPlayer() {
         var t = this;
+
         var audioNode = document.createElement('audio');
         audioNode.setAttribute('src', t.options.audioDescriptionSource);
-        audioNode.setAttribute('preload', 'metadata');
-        audioNode.setAttribute('playsinline', '');
-        audioNode.setAttribute('controls', '');
+        audioNode.classList.add(t.options.classPrefix + 'audio-description-player');
         audioNode.load();
         document.body.appendChild(audioNode);
 
         t.audioDescription = new mejs.MediaElementPlayer(audioNode, {
-            features: ['volume', 'playpause', 'current', 'progress'],
-            audioVolume: 'vertical',
+            features: ['volume'],
+            audioVolume: t.options.videoVolume,
             startVolume: t.node.volume,
             pauseOtherPlayers: false
         });
 
-        t.audioDescription.container.classList.add(t.options.classPrefix + 'audio-description-player');
-
-        t.node.addEventListener('play', function () {
-            var promise = t.audioDescription.node.play();
-            promise.catch(function (e) {
-                return console.error(e);
-            });
-        });
-        t.audioDescription.node.addEventListener('play', function () {
-            return t.audioDescription.node.currentTime = t.node.currentTime;
-        });
-        t.node.addEventListener('seeked', function () {
-            return t.audioDescription.node.currentTime = t.node.currentTime;
-        });
-        t.node.addEventListener('pause', function () {
-            return t.audioDescription.node.pause();
-        });
-        t.node.addEventListener('ended', function () {
-            return t.audioDescription.node.pause();
-        });
+        t._bindAudioDescriptionEvents();
 
         if (!t.options.isVoiceover) {
             var volumeButtonClass = t.options.classPrefix + 'volume-button';
@@ -191,12 +171,30 @@ Object.assign(MediaElementPlayer.prototype, {
                 t.descriptiveVolumeButton = descriptiveVolumeButton;
             }
         }
+    },
+    _bindAudioDescriptionEvents: function _bindAudioDescriptionEvents() {
+        var t = this;
 
-        if (t.options.isVoiceover) {
-            t.node.addEventListener('volumechange', function () {
-                return t.audioDescription.node.volume = t.node.volume;
+        t.node.addEventListener('play', function () {
+            return t.audioDescription.node.play().catch(function (e) {
+                return console.error(e);
             });
-        }
+        });
+        t.node.addEventListener('seeked', function () {
+            return t.audioDescription.node.currentTime = t.node.currentTime;
+        });
+        t.node.addEventListener('pause', function () {
+            return t.audioDescription.node.pause();
+        });
+        t.node.addEventListener('ended', function () {
+            return t.audioDescription.node.pause();
+        });
+        t.audioDescription.node.addEventListener('play', function () {
+            return t.audioDescription.node.currentTime = t.node.currentTime;
+        });
+        if (t.options.isVoiceover) t.node.addEventListener('volumechange', function () {
+            return t.audioDescription.node.volume = t.node.volume;
+        });
     },
     _toggleAudioDescription: function _toggleAudioDescription() {
         var t = this;

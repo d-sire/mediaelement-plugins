@@ -9,31 +9,37 @@ Object.assign(mejs.MepDefaults, {
      * @type {Boolean}
      */
     videoDescriptionToggled: false,
+
     /**
      * Audio description is toggled
      * @type {Boolean}
      */
     audioDescriptionToggled: false,
+
     /**
      * Store for initial source file
      * @type {?String}
      */
     defaultSource: null,
+
     /**
      * Store for best matching audio description file
      * @type {?String}
      */
     audioDescriptionSource: null,
+
     /**
      * Store for best matching video description file
      * @type {?String}
      */
     videoDescriptionSource: null,
+
     /**
      * if the player is currently playing
      * @type {Boolean}
      */
     isPlaying: false,
+
     /**
      * should audio description be voiceover
      * @type {Boolean}
@@ -46,7 +52,7 @@ Object.assign(MediaElementPlayer.prototype, {
     builda11y ()  {
         const t = this;
 
-        t.options.defaultSource = this.node.src;
+        t.options.defaultSource = t.node.src;
         t.options.isVoiceover = t._loadBooleanFromAttribute('data-audio-description-voiceover');
         t.options.audioDescriptionSource = t._loadSourceFromAttribute('data-audio-description');
         t.options.videoDescriptionSource = t._loadSourceFromAttribute('data-video-description');
@@ -161,8 +167,10 @@ Object.assign(MediaElementPlayer.prototype, {
      * @returns {?String} source
      */
     _evaluateBestMatchingSource(sourceArray) {
-        const canPlayType = type => this.node.canPlayType(type);
         const getMimeFromType = type => mejs.Utils.getMimeFromType(type);
+        const canPlayType = type => this.node.canPlayType(type);
+
+        // TODO: caching von filter?!
 
         // checking most likely support
         const propablySources = sourceArray.filter(file => canPlayType(getMimeFromType(file.type)) === 'probably');
@@ -182,31 +190,21 @@ Object.assign(MediaElementPlayer.prototype, {
      */
     _createAudioDescriptionPlayer() {
         const t = this;
+
         const audioNode = document.createElement('audio');
         audioNode.setAttribute('src', t.options.audioDescriptionSource);
-        audioNode.setAttribute('preload', 'metadata');
-        audioNode.setAttribute('playsinline', '');
-        audioNode.setAttribute('controls', '');
+        audioNode.classList.add(`${t.options.classPrefix}audio-description-player`);
         audioNode.load();
         document.body.appendChild(audioNode);
 
         t.audioDescription = new mejs.MediaElementPlayer(audioNode, {
-            features: ['volume', 'playpause', 'current', 'progress'],
-            audioVolume: 'vertical',
+            features: ['volume'],
+            audioVolume: t.options.videoVolume,
             startVolume: t.node.volume,
             pauseOtherPlayers: false
         });
 
-        t.audioDescription.container.classList.add(`${t.options.classPrefix}audio-description-player`);
-
-        t.node.addEventListener('play', () => {
-            const promise = t.audioDescription.node.play();
-            promise.catch(e => console.error(e));
-        });
-        t.audioDescription.node.addEventListener('play', () => t.audioDescription.node.currentTime = t.node.currentTime);
-        t.node.addEventListener('seeked', () => t.audioDescription.node.currentTime = t.node.currentTime);
-        t.node.addEventListener('pause', () => t.audioDescription.node.pause());
-        t.node.addEventListener('ended', () => t.audioDescription.node.pause());
+        t._bindAudioDescriptionEvents();
 
         // if audio description is not voice over, move the audio description players volume slider into the mediaelement player to enable volume changes
         if(!t.options.isVoiceover) {
@@ -221,13 +219,29 @@ Object.assign(MediaElementPlayer.prototype, {
                 t.descriptiveVolumeButton = descriptiveVolumeButton;
             }
         }
-
-        // if audio description is voice over, map volume changes to audio description player
-        if(t.options.isVoiceover) {
-            t.node.addEventListener('volumechange', () => t.audioDescription.node.volume = t.node.volume);
-        }
     },
 
+    /**
+     * Bind events for audio description handling
+     * @private
+     * @returns {Undefined}
+     */
+    _bindAudioDescriptionEvents() {
+        const t = this;
+
+        t.node.addEventListener('play', () => t.audioDescription.node.play().catch(e => console.error(e)));
+        t.node.addEventListener('seeked', () => t.audioDescription.node.currentTime = t.node.currentTime);
+        t.node.addEventListener('pause', () => t.audioDescription.node.pause());
+        t.node.addEventListener('ended', () => t.audioDescription.node.pause());
+        t.audioDescription.node.addEventListener('play', () => t.audioDescription.node.currentTime = t.node.currentTime);
+        if(t.options.isVoiceover) t.node.addEventListener('volumechange', () => t.audioDescription.node.volume = t.node.volume);
+    },
+
+    /**
+     * Handle audio description toggling
+     * @private
+     * @returns {Undefined}
+     */
     _toggleAudioDescription() {
         const t = this;
 
@@ -256,6 +270,11 @@ Object.assign(MediaElementPlayer.prototype, {
         }
     },
 
+    /**
+     * Handle video description toggling
+     * @private
+     * @returns {Undefined}
+     */
     _toggleVideoDescription() {
         const t = this;
         const currentTime = t.node.currentTime;
