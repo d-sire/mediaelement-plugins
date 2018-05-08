@@ -13,8 +13,8 @@
 
 function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
 
-mejs.i18n.en['mejs.a11y-video-description'] = 'Toggle sign language';
 mejs.i18n.en['mejs.a11y-audio-description'] = 'Toggle audio description';
+mejs.i18n.en['mejs.a11y-video-description'] = 'Toggle sign language';
 
 Object.assign(mejs.MepDefaults, {
     videoDescriptionToggled: false,
@@ -29,7 +29,9 @@ Object.assign(mejs.MepDefaults, {
 
     isPlaying: false,
 
-    isVoiceover: false
+    isVoiceover: false,
+
+    audioCanPlay: false
 });
 
 Object.assign(MediaElementPlayer.prototype, {
@@ -119,7 +121,7 @@ Object.assign(MediaElementPlayer.prototype, {
         var boolValue = t.node.getAttribute(attribute);
         return boolValue === 'true' || boolValue === '';
     },
-    _evaluateBestMatchingSource: function _evaluateBestMatchingSource(sourceArray) {
+    _evaluateBestMatchingSource: function _evaluateBestMatchingSource(sources) {
         var _this = this;
 
         var getMimeFromType = function getMimeFromType(type) {
@@ -128,16 +130,19 @@ Object.assign(MediaElementPlayer.prototype, {
         var canPlayType = function canPlayType(type) {
             return _this.node.canPlayType(type);
         };
+        var matchesBrowser = function matchesBrowser(file) {
+            return canPlayType(getMimeFromType(file.type));
+        };
 
-        var propablySources = sourceArray.filter(function (file) {
-            return canPlayType(getMimeFromType(file.type)) === 'probably';
+        var propablySource = sources.find(function (file) {
+            return matchesBrowser(file) === 'probably';
         });
-        if (propablySources.length > 0) return propablySources[0].src;
+        if (propablySource) return propablySource;
 
-        var alternativeSources = sourceArray.filter(function (file) {
-            return canPlayType(getMimeFromType(file.type)) === 'maybe';
+        var alternativeSource = sources.find(function (file) {
+            return matchesBrowser(file) === 'maybe';
         });
-        if (alternativeSources.length > 0) return alternativeSources[0].src;
+        if (alternativeSource) return alternativeSource;
 
         return null;
     },
@@ -145,21 +150,46 @@ Object.assign(MediaElementPlayer.prototype, {
         var t = this;
 
         var audioNode = document.createElement('audio');
-        audioNode.setAttribute('src', t.options.audioDescriptionSource);
-        audioNode.classList.add(t.options.classPrefix + 'audio-description-player');
+        audioNode.setAttribute('preload', 'auto');
+
+        audioNode.setAttribute('src', t.options.audioDescriptionSource.src);
+        audioNode.setAttribute('type', t.options.audioDescriptionSource.type);
         audioNode.load();
         document.body.appendChild(audioNode);
 
         t.audioDescription = new mejs.MediaElementPlayer(audioNode, {
-            features: ['volume'],
+            features: ['volume', 'progress', 'playpause', 'current'],
             audioVolume: t.options.videoVolume,
             startVolume: t.node.volume,
             pauseOtherPlayers: false
         });
 
-        t._bindAudioDescriptionEvents();
+        t.audioDescription.node.addEventListener('canplay', function () {
+            return t.options.audioCanPlay = true;
+        });
 
-        if (!t.options.isVoiceover) {
+        t.node.addEventListener('play', function () {
+            return t.audioDescription.node.play().catch(function (e) {
+                return console.error(e);
+            });
+        });
+        t.node.addEventListener('pause', function () {
+            return t.audioDescription.node.pause();
+        });
+        t.node.addEventListener('ended', function () {
+            return t.audioDescription.node.pause();
+        });
+        t.node.addEventListener('timeupdate', function () {
+            var shouldSync = Math.abs(t.node.currentTime - t.audioDescription.node.currentTime) > 0.35;
+            var canPlay = t.options.audioCanPlay;
+            if (shouldSync && canPlay) t.audioDescription.node.currentTime = t.node.currentTime;
+        });
+
+        if (t.options.isVoiceover) {
+            t.node.addEventListener('volumechange', function () {
+                return t.audioDescription.node.volume = t.node.volume;
+            });
+        } else {
             var volumeButtonClass = t.options.classPrefix + 'volume-button';
             var videoVolumeButton = t._getFirstChildNodeByClassName(t.controls, volumeButtonClass);
             t.videoVolumeButton = videoVolumeButton;
@@ -172,30 +202,6 @@ Object.assign(MediaElementPlayer.prototype, {
             }
         }
     },
-    _bindAudioDescriptionEvents: function _bindAudioDescriptionEvents() {
-        var t = this;
-
-        t.node.addEventListener('play', function () {
-            return t.audioDescription.node.play().catch(function (e) {
-                return console.error(e);
-            });
-        });
-        t.node.addEventListener('seeked', function () {
-            return t.audioDescription.node.currentTime = t.node.currentTime;
-        });
-        t.node.addEventListener('pause', function () {
-            return t.audioDescription.node.pause();
-        });
-        t.node.addEventListener('ended', function () {
-            return t.audioDescription.node.pause();
-        });
-        t.audioDescription.node.addEventListener('play', function () {
-            return t.audioDescription.node.currentTime = t.node.currentTime;
-        });
-        if (t.options.isVoiceover) t.node.addEventListener('volumechange', function () {
-            return t.audioDescription.node.volume = t.node.volume;
-        });
-    },
     _toggleAudioDescription: function _toggleAudioDescription() {
         var t = this;
 
@@ -203,13 +209,16 @@ Object.assign(MediaElementPlayer.prototype, {
 
         if (t.options.audioDescriptionToggled) {
             t.audioDescription.node.volume = t.node.volume;
-            if (t.options.isPlaying) t.audioDescription.node.play().catch(function (e) {
+            if (t.options.isPlaying && t.audioDescription) t.audioDescription.node.play().catch(function (e) {
                 return console.error(e);
             });
 
-            if (!t.options.isVoiceover && t.videoVolumeButton) {
+            if (!t.options.isVoiceover) {
                 t.node.muted = true;
                 t.audioDescription.node.muted = false;
+            }
+
+            if (!t.options.isVoiceover && t.videoVolumeButton && t.descriptiveVolumeButton) {
                 mejs.Utils.addClass(t.videoVolumeButton, 'hidden');
                 mejs.Utils.removeClass(t.descriptiveVolumeButton, 'hidden');
             }
@@ -217,9 +226,12 @@ Object.assign(MediaElementPlayer.prototype, {
             t.node.volume = t.audioDescription.node.volume;
             t.audioDescription.node.pause();
 
-            if (!t.options.isVoiceover && t.videoVolumeButton) {
-                t.audioDescription.node.muted = true;
+            if (!t.options.isVoiceover) {
                 t.node.muted = false;
+                t.audioDescription.node.muted = true;
+            }
+
+            if (!t.options.isVoiceover && t.videoVolumeButton && t.descriptiveVolumeButton) {
                 mejs.Utils.removeClass(t.videoVolumeButton, 'hidden');
                 mejs.Utils.addClass(t.descriptiveVolumeButton, 'hidden');
             }
@@ -238,7 +250,9 @@ Object.assign(MediaElementPlayer.prototype, {
         t.node.load();
         t.node.setCurrentTime(currentTime);
 
-        if (wasPlaying) t.node.play();
+        if (wasPlaying) t.node.play().catch(function (e) {
+            return console.error(e);
+        });
     }
 });
 

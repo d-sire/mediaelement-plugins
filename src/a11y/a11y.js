@@ -1,7 +1,7 @@
 'use strict';
 
-mejs.i18n.en['mejs.a11y-video-description'] = 'Toggle sign language';
 mejs.i18n.en['mejs.a11y-audio-description'] = 'Toggle audio description';
+mejs.i18n.en['mejs.a11y-video-description'] = 'Toggle sign language';
 
 Object.assign(mejs.MepDefaults, {
     /**
@@ -35,16 +35,22 @@ Object.assign(mejs.MepDefaults, {
     videoDescriptionSource: null,
 
     /**
-     * if the player is currently playing
+     * Player is currently playing
      * @type {Boolean}
      */
     isPlaying: false,
 
     /**
-     * should audio description be voiceover
+     * Should audio description be voiceover
      * @type {Boolean}
      */
     isVoiceover: false,
+
+    /**
+     * Audio description player has fired the canplay event
+     * @type {Boolean}
+     */
+    audioCanPlay: false,
 });
 
 
@@ -163,22 +169,21 @@ Object.assign(MediaElementPlayer.prototype, {
     /**
      * Evaluate the best matching source from an array of sources
      * @private
-     * @param {Array.<{src: String, type: String}>} sourceArray
-     * @returns {?String} source
+     * @param {Array.<{src: String, type: String}>} sources
+     * @returns ?{src: String, type: String} source
      */
-    _evaluateBestMatchingSource(sourceArray) {
+    _evaluateBestMatchingSource(sources) {
         const getMimeFromType = type => mejs.Utils.getMimeFromType(type);
         const canPlayType = type => this.node.canPlayType(type);
-
-        // TODO: caching von filter?!
+        const matchesBrowser = file => canPlayType(getMimeFromType(file.type));
 
         // checking most likely support
-        const propablySources = sourceArray.filter(file => canPlayType(getMimeFromType(file.type)) === 'probably');
-        if (propablySources.length > 0) return propablySources[0].src;
+        const propablySource = sources.find(file => matchesBrowser(file) === 'probably');
+        if (propablySource) return propablySource;
 
         // checking might support
-        const alternativeSources = sourceArray.filter(file => canPlayType(getMimeFromType(file.type)) === 'maybe');
-        if (alternativeSources.length > 0) return alternativeSources[0].src;
+        const alternativeSource = sources.find(file => matchesBrowser(file) === 'maybe');
+        if (alternativeSource) return alternativeSource;
 
         return null;
     },
@@ -192,22 +197,38 @@ Object.assign(MediaElementPlayer.prototype, {
         const t = this;
 
         const audioNode = document.createElement('audio');
-        audioNode.setAttribute('src', t.options.audioDescriptionSource);
-        audioNode.classList.add(`${t.options.classPrefix}audio-description-player`);
+        audioNode.setAttribute('preload', 'auto');
+        // audioNode.classList.add(`${t.options.classPrefix}audio-description-player`);
+        audioNode.setAttribute('src', t.options.audioDescriptionSource.src);
+        audioNode.setAttribute('type', t.options.audioDescriptionSource.type);
         audioNode.load();
         document.body.appendChild(audioNode);
 
         t.audioDescription = new mejs.MediaElementPlayer(audioNode, {
-            features: ['volume'],
+            features: ['volume', 'progress', 'playpause', 'current'],
             audioVolume: t.options.videoVolume,
             startVolume: t.node.volume,
             pauseOtherPlayers: false
         });
 
-        t._bindAudioDescriptionEvents();
+        t.audioDescription.node.addEventListener('canplay', () => t.options.audioCanPlay = true);
 
-        // if audio description is not voice over, move the audio description players volume slider into the mediaelement player to enable volume changes
-        if(!t.options.isVoiceover) {
+        t.node.addEventListener('play', () => t.audioDescription.node.play().catch(e => console.error(e)));
+        t.node.addEventListener('pause', () => t.audioDescription.node.pause());
+        t.node.addEventListener('ended', () => t.audioDescription.node.pause());
+        t.node.addEventListener('timeupdate', () => {
+            const shouldSync = Math.abs(t.node.currentTime - t.audioDescription.node.currentTime) > 0.35;
+            const canPlay = t.options.audioCanPlay;
+            if (shouldSync && canPlay) t.audioDescription.node.currentTime = t.node.currentTime;
+        });
+
+
+
+        // if audio description is voice over, map volume slider to both players
+        // otherwise move the audio players volume slider inside the movie player to simulate normal volume handling
+        if(t.options.isVoiceover) {
+            t.node.addEventListener('volumechange', () => t.audioDescription.node.volume = t.node.volume);
+        } else {
             const volumeButtonClass = `${t.options.classPrefix}volume-button`;
             const videoVolumeButton = t._getFirstChildNodeByClassName(t.controls, volumeButtonClass);
             t.videoVolumeButton = videoVolumeButton;
@@ -222,22 +243,6 @@ Object.assign(MediaElementPlayer.prototype, {
     },
 
     /**
-     * Bind events for audio description handling
-     * @private
-     * @returns {Undefined}
-     */
-    _bindAudioDescriptionEvents() {
-        const t = this;
-
-        t.node.addEventListener('play', () => t.audioDescription.node.play().catch(e => console.error(e)));
-        t.node.addEventListener('seeked', () => t.audioDescription.node.currentTime = t.node.currentTime);
-        t.node.addEventListener('pause', () => t.audioDescription.node.pause());
-        t.node.addEventListener('ended', () => t.audioDescription.node.pause());
-        t.audioDescription.node.addEventListener('play', () => t.audioDescription.node.currentTime = t.node.currentTime);
-        if(t.options.isVoiceover) t.node.addEventListener('volumechange', () => t.audioDescription.node.volume = t.node.volume);
-    },
-
-    /**
      * Handle audio description toggling
      * @private
      * @returns {Undefined}
@@ -249,11 +254,14 @@ Object.assign(MediaElementPlayer.prototype, {
 
         if (t.options.audioDescriptionToggled) {
             t.audioDescription.node.volume = t.node.volume;
-            if (t.options.isPlaying) t.audioDescription.node.play().catch(e => console.error(e));
+            if (t.options.isPlaying && t.audioDescription) t.audioDescription.node.play().catch(e => console.error(e));
 
-            if(!t.options.isVoiceover && t.videoVolumeButton) {
+            if(!t.options.isVoiceover) {
                 t.node.muted = true;
                 t.audioDescription.node.muted = false;
+            }
+
+            if(!t.options.isVoiceover && t.videoVolumeButton && t.descriptiveVolumeButton) {
                 mejs.Utils.addClass(t.videoVolumeButton, 'hidden');
                 mejs.Utils.removeClass(t.descriptiveVolumeButton, 'hidden');
             }
@@ -261,9 +269,12 @@ Object.assign(MediaElementPlayer.prototype, {
             t.node.volume = t.audioDescription.node.volume;
             t.audioDescription.node.pause();
 
-            if(!t.options.isVoiceover && t.videoVolumeButton) {
-                t.audioDescription.node.muted = true;
+            if(!t.options.isVoiceover) {
                 t.node.muted = false;
+                t.audioDescription.node.muted = true;
+            }
+
+            if(!t.options.isVoiceover && t.videoVolumeButton && t.descriptiveVolumeButton) {
                 mejs.Utils.removeClass(t.videoVolumeButton, 'hidden');
                 mejs.Utils.addClass(t.descriptiveVolumeButton, 'hidden');
             }
@@ -288,6 +299,6 @@ Object.assign(MediaElementPlayer.prototype, {
         t.node.load();
         t.node.setCurrentTime(currentTime);
 
-        if (wasPlaying) t.node.play();
+        if (wasPlaying) t.node.play().catch(e => console.error(e));
     }
 });
