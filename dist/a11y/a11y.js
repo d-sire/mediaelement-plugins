@@ -151,7 +151,7 @@ Object.assign(MediaElementPlayer.prototype, {
 
         var audioNode = document.createElement('audio');
         audioNode.setAttribute('preload', 'auto');
-
+        audioNode.classList.add(t.options.classPrefix + 'audio-description-player');
         audioNode.setAttribute('src', t.options.audioDescriptionSource.src);
         audioNode.setAttribute('type', t.options.audioDescriptionSource.type);
         audioNode.load();
@@ -167,13 +167,20 @@ Object.assign(MediaElementPlayer.prototype, {
         t.audioDescription.node.addEventListener('canplay', function () {
             return t.options.audioCanPlay = true;
         });
-
         t.node.addEventListener('play', function () {
             return t.audioDescription.node.play().catch(function (e) {
                 return console.error(e);
             });
         });
+        t.node.addEventListener('playing', function () {
+            return t.audioDescription.node.play().catch(function (e) {
+                return console.error(e);
+            });
+        });
         t.node.addEventListener('pause', function () {
+            return t.audioDescription.node.pause();
+        });
+        t.node.addEventListener('waiting', function () {
             return t.audioDescription.node.pause();
         });
         t.node.addEventListener('ended', function () {

@@ -198,7 +198,7 @@ Object.assign(MediaElementPlayer.prototype, {
 
         const audioNode = document.createElement('audio');
         audioNode.setAttribute('preload', 'auto');
-        // audioNode.classList.add(`${t.options.classPrefix}audio-description-player`);
+        audioNode.classList.add(`${t.options.classPrefix}audio-description-player`);
         audioNode.setAttribute('src', t.options.audioDescriptionSource.src);
         audioNode.setAttribute('type', t.options.audioDescriptionSource.type);
         audioNode.load();
@@ -212,17 +212,16 @@ Object.assign(MediaElementPlayer.prototype, {
         });
 
         t.audioDescription.node.addEventListener('canplay', () => t.options.audioCanPlay = true);
-
         t.node.addEventListener('play', () => t.audioDescription.node.play().catch(e => console.error(e)));
+        t.node.addEventListener('playing', () => t.audioDescription.node.play().catch(e => console.error(e)));
         t.node.addEventListener('pause', () => t.audioDescription.node.pause());
+        t.node.addEventListener('waiting', () => t.audioDescription.node.pause());
         t.node.addEventListener('ended', () => t.audioDescription.node.pause());
         t.node.addEventListener('timeupdate', () => {
             const shouldSync = Math.abs(t.node.currentTime - t.audioDescription.node.currentTime) > 0.35;
             const canPlay = t.options.audioCanPlay;
             if (shouldSync && canPlay) t.audioDescription.node.currentTime = t.node.currentTime;
         });
-
-
 
         // if audio description is voice over, map volume slider to both players
         // otherwise move the audio players volume slider inside the movie player to simulate normal volume handling
