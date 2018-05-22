@@ -18,7 +18,7 @@ Object.assign(mejs.MepDefaults, {
 
     /**
      * Store for initial source file
-     * @type {?String}
+     * @type ?{src: String, type: String}
      */
     defaultSource: null,
 
@@ -50,7 +50,7 @@ Object.assign(mejs.MepDefaults, {
      * Audio description player has fired the canplay event
      * @type {Boolean}
      */
-    audioCanPlay: false,
+    audioDescriptionCanPlay: false,
 });
 
 
@@ -58,7 +58,10 @@ Object.assign(MediaElementPlayer.prototype, {
     builda11y ()  {
         const t = this;
 
-        t.options.defaultSource = t.node.src;
+        t.options.defaultSource = {
+            src: t.node.src,
+            type: t.node.type
+        };
         t.options.isVoiceover = t._loadBooleanFromAttribute('data-audio-description-voiceover');
         t.options.audioDescriptionSource = t._loadSourceFromAttribute('data-audio-description');
         t.options.videoDescriptionSource = t._loadSourceFromAttribute('data-video-description');
@@ -205,13 +208,13 @@ Object.assign(MediaElementPlayer.prototype, {
         document.body.appendChild(audioNode);
 
         t.audioDescription = new mejs.MediaElementPlayer(audioNode, {
-            features: ['volume', 'progress', 'playpause', 'current'],
+            features: ['volume'],
             audioVolume: t.options.videoVolume,
             startVolume: t.node.volume,
             pauseOtherPlayers: false
         });
 
-        t.audioDescription.node.addEventListener('canplay', () => t.options.audioCanPlay = true);
+        t.audioDescription.node.addEventListener('canplay', () => t.options.audioDescriptionCanPlay = true);
         t.node.addEventListener('play', () => t.audioDescription.node.play().catch(e => console.error(e)));
         t.node.addEventListener('playing', () => t.audioDescription.node.play().catch(e => console.error(e)));
         t.node.addEventListener('pause', () => t.audioDescription.node.pause());
@@ -219,7 +222,7 @@ Object.assign(MediaElementPlayer.prototype, {
         t.node.addEventListener('ended', () => t.audioDescription.node.pause());
         t.node.addEventListener('timeupdate', () => {
             const shouldSync = Math.abs(t.node.currentTime - t.audioDescription.node.currentTime) > 0.35;
-            const canPlay = t.options.audioCanPlay;
+            const canPlay = t.options.audioDescriptionCanPlay;
             if (shouldSync && canPlay) t.audioDescription.node.currentTime = t.node.currentTime;
         });
 
@@ -293,11 +296,16 @@ Object.assign(MediaElementPlayer.prototype, {
 
         t.node.pause();
 
-        t.node.setSrc(active ? t.options.videoDescriptionSource : t.options.defaultSource);
-
+        t.node.src = active ? t.options.videoDescriptionSource.src : t.options.defaultSource.src;
+        t.node.type = active ? t.options.videoDescriptionSource.type : t.options.defaultSource.type;
         t.node.load();
-        t.node.setCurrentTime(currentTime);
 
-        if (wasPlaying) t.node.play().catch(e => console.error(e));
+        if (wasPlaying) {
+            t.node.play()
+                .then(() => t.node.currentTime = currentTime)
+                .catch(e => console.error(e))
+        } else {
+            t.node.setCurrentTime(currentTime);
+        }
     }
 });
