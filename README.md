@@ -180,7 +180,7 @@ See`src/` directory, and check how the files were written to ensure compatibilit
 ## Available plugins
 
 * [A11y](docs/a11y.md)
-* [AirPlay](docs/airplay.md)
+* [Ads](docs/ads.md)
 * [AirPlay](docs/airplay.md)
 * [Chromecast](docs/chromecast.md)
 * [Context Menu](docs/context-menu.md)
